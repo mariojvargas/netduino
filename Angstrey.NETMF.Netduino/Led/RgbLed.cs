@@ -1,30 +1,45 @@
-using Microsoft.SPOT.Hardware;
+using System;
 
 namespace Angstrey.NETMF.Netduino.Leds
 {
     public class RgbLed
     {
+        private const int MaximumColorValue = 255;
+        private const int MinimumColorValue = 0;
+
         private readonly SecretLabs.NETMF.Hardware.PWM _redPinPort;
         private readonly SecretLabs.NETMF.Hardware.PWM _greenPinPort;
         private readonly SecretLabs.NETMF.Hardware.PWM _bluePinPort;
 
-        public RgbLed(Cpu.Pin redPin, Cpu.Pin greenPin, Cpu.Pin bluePin)
+        public RgbLed(RgbLedPins pins)
         {
-            _redPinPort = new SecretLabs.NETMF.Hardware.PWM(redPin);
-            _greenPinPort = new SecretLabs.NETMF.Hardware.PWM(greenPin);
-            _bluePinPort = new SecretLabs.NETMF.Hardware.PWM(bluePin);
+            _redPinPort = new SecretLabs.NETMF.Hardware.PWM(pins.RedPin);
+            _greenPinPort = new SecretLabs.NETMF.Hardware.PWM(pins.GreenPin);
+            _bluePinPort = new SecretLabs.NETMF.Hardware.PWM(pins.BluePin);
         }
 
         public void SetColor(int red, int green, int blue)
         {
-            _redPinPort.SetDutyCycle(ToIntensity(red));
-            _greenPinPort.SetDutyCycle(ToIntensity(green));
-            _bluePinPort.SetDutyCycle(ToIntensity(blue));
+            EnsureColorIsInRange(red, "red");
+            EnsureColorIsInRange(green, "green");
+            EnsureColorIsInRange(blue, "blue");
+
+            _redPinPort.SetDutyCycle(GetIntensityPercentage(red));
+            _greenPinPort.SetDutyCycle(GetIntensityPercentage(green));
+            _bluePinPort.SetDutyCycle(GetIntensityPercentage(blue));
         }
 
-        private uint ToIntensity(int value)
+        private static void EnsureColorIsInRange(int value, string parameterName)
         {
-            return (uint)(100 * (value / 255.0));
+            if (MinimumColorValue < value || value > MaximumColorValue)
+            {
+                throw new ArgumentOutOfRangeException(parameterName, "Color colorValue must be between 0 and 255. Value = " + value);
+            }
+        }
+
+        private uint GetIntensityPercentage(int colorValue)
+        {
+            return (uint)(100.0 * (colorValue / (double)MaximumColorValue));
         }
     }
 }
